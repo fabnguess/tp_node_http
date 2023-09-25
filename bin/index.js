@@ -9,5 +9,3 @@ prog
   .command('run')
   .describe('Checks for dependency updates')
   .action(listAndCheckDependencies);
-
-prog.parse(process.argv);
