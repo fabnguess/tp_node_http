@@ -7,8 +7,12 @@ import { stdout } from 'node:process';
 import { fetch } from 'undici';
 import semver from 'semver';
 
-function readPackageJson() {
+export function readPackageJson() {
   const packageJsonPath = path.join(process.cwd(), 'package.json');
+
+  if (!fs.existsSync(packageJsonPath)) {
+    throw new Error(`package.json not found at ${packageJsonPath}`);
+  }
 
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 
@@ -17,9 +21,9 @@ function readPackageJson() {
   return { ...dependencies, ...devDependencies };
 }
 
-async function getLatestVersion(dependencies) {
-  const packageNameAndVersions = Object.keys(dependencies).map(
-    async (packageName) => {
+export async function getLatestVersion(dependencies) {
+  const packageNameAndVersions = await Promise.all(
+    Object.keys(dependencies).map(async (packageName) => {
       const response = await fetch(`https://registry.npmjs.org/${packageName}`);
 
       if (!response.ok) {
@@ -29,9 +33,9 @@ async function getLatestVersion(dependencies) {
       const data = await response.json();
 
       return { packageName, latestVersion: data['dist-tags'].latest };
-    }
+    })
   );
-  return Promise.all(packageNameAndVersions);
+  return packageNameAndVersions;
 }
 
 export async function listAndCheckDependencies() {
